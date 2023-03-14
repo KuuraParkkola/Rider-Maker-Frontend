@@ -306,6 +306,17 @@ function App() {
     exportElem.current.click();
   }
 
+  const loadDemo = async () => {
+    try {
+      const setup = await axios.get('/demo_rider.json');
+      setDoc(setup.data.document);
+      setContent(setup.data.content);
+      setPageCount(setup.data.content.filter(section => section.section === 'page_break').length + 1);
+    } catch(err) {
+      console.log("Failed to fetch demo document");
+    }
+  }
+
   const clearDocument = () => {
     setDoc(createEmptyDocument());
     setContent([]);
@@ -329,6 +340,7 @@ function App() {
           <p className='sidebarBtn' onClick={ () => importDocument() }>Import</p>
           <p className='sidebarBtn' onClick={ () => exportDocument() }>Export</p>
           <p className='sidebarBtn' onClick={ () => renderDocument() }>Render</p>
+          <p className='sidebarBtn' onClick={ () => loadDemo() }>Load Demo</p>
           <p className='sidebarBtn' onClick={ () => clearDocument() }>Clear</p>
         </div>
       </div>
