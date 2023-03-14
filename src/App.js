@@ -12,11 +12,12 @@ import renderStagePlan from './components/StagePlan';
 import renderEquipmentList from './components/EquipmentList';
 import Section from './components/Section';
 import PageBreak from './components/PageBreak';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createEmptyBandOverviewSection, createEmptyChannelListSection,
   createEmptyContactsSection, createEmptyDocument, createEmptyEquipmentListSection,
   createEmptyMembersSection, createEmptyMonitoringSection, createEmptyRequirementsSection,
   createEmptyStagePlanSection, createEmptyTitleSection, createPageBreak } from './utility/objectBuilders';
+import { Maximize2 } from 'react-feather';
 
 
 const AppStyles = styled.div`
@@ -149,15 +150,44 @@ const AppStyles = styled.div`
   .content .componentSelector .componentGrayOption {
     color: #777;
   }
+
+  .windowSizeError {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0 30px;
+    background-color: aliceblue;
+  }
+
+  .windowSizeError p {
+    text-align: center;
+    font-size: 24px;
+  }
 `;
 
 function App() {
   const [ pageCount, setPageCount ] = useState(1);
   const [ doc, setDoc ] = useState(createEmptyDocument());
   const [ content, setContent ] = useState([]);
+  const [ displayWidth, setDisplayWidth ] = useState(window.innerWidth);
 
   const importElem = useRef(null);
   const exportElem = useRef(null);
+
+  useEffect(() => {
+    const handleWindowResize = () => {
+      setDisplayWidth(window.innerWidth);
+    }
+
+    window.addEventListener('resize', handleWindowResize);
+    
+    return () => {
+      window.removeEventListener('resize', handleWindowResize);
+    }
+  }, []);
 
   const createSection = (section) => {
     switch (section) {
@@ -325,49 +355,58 @@ function App() {
 
   return (
     <AppStyles>
-      <div className='sidebar'>
-        <h1 className='mainTitle'>Rider Builder</h1>
-        <div className='mainContent'>
-          <h2>Outline</h2>
-          <a className="outlineSection" href={ `#sectSettings` }>Document Settings</a>
-          <div className='outlinePageBreak' />
-          { content.map( (section, idx) => ( section.section === 'page_break' ?
-            <div key={ idx } className='outlinePageBreak' /> :
-            <a className="outlineSection" href={ `#sect${idx}` } key={ idx }>{ section.header }</a>
-          ))}
+      { displayWidth >= 1100 ?
+        <>
+          <div className='sidebar'>
+            <h1 className='mainTitle'>Rider Builder</h1>
+            <div className='mainContent'>
+              <h2>Outline</h2>
+              <a className="outlineSection" href={ `#sectSettings` }>Document Settings</a>
+              <div className='outlinePageBreak' />
+              { content.map( (section, idx) => ( section.section === 'page_break' ?
+                <div key={ idx } className='outlinePageBreak' /> :
+                <a className="outlineSection" href={ `#sect${idx}` } key={ idx }>{ section.header }</a>
+              ))}
+            </div>
+            <div className='sessionControls'>
+              <p className='sidebarBtn' onClick={ () => importDocument() }>Import</p>
+              <p className='sidebarBtn' onClick={ () => exportDocument() }>Export</p>
+              <p className='sidebarBtn' onClick={ () => renderDocument() }>Render</p>
+              <p className='sidebarBtn' onClick={ () => loadDemo() }>Load Demo</p>
+              <p className='sidebarBtn' onClick={ () => clearDocument() }>Clear</p>
+            </div>
+          </div>
+          <div className='content'>
+            <DocumentSettings id="sectSettings" data={ doc } setData={ setDoc } />
+            <PageBreak id="sectBegin" pageNum={1} allPages={ pageCount } locked />
+            { renderSections() }
+            <div className='contentAddBtn'>
+              <select className='componentSelector'
+                onChange={ ({target}) => createSection(target.value) }
+                value="Add a section">
+                <option className='componentGrayOption'>Add a section</option>
+                <option value="band_overview">Band Overview</option>
+                <option value="channel_list">Channel List</option>
+                <option value="contacts">Contacts</option>
+                <option value="equipment_list">Equipment List</option>
+                <option value="members">Members</option>
+                <option value="monitoring">Monitoring</option>
+                <option value="requirements">Requirements</option>
+                <option value="stage_plan">Stage Plan</option>
+                <option value="title_section">Title Section</option>
+                <option value="page_break">Page Break</option>
+              </select>
+            </div>
+          </div>
+          <input type='file' ref={ importElem } onChange={ fileReceived } style={{ display: 'none' }} />
+          <a href="/" ref={ exportElem } style={{ display: 'none' }}>Hidden downloader tag for document exports</a>
+        </>
+      :
+        <div className='windowSizeError'>
+          <Maximize2 size={ 100 } />
+          <p>Unfortunately the application cannot be displayed on devices with a display more narrow than 1100px. Please use a laptop instead.</p>
         </div>
-        <div className='sessionControls'>
-          <p className='sidebarBtn' onClick={ () => importDocument() }>Import</p>
-          <p className='sidebarBtn' onClick={ () => exportDocument() }>Export</p>
-          <p className='sidebarBtn' onClick={ () => renderDocument() }>Render</p>
-          <p className='sidebarBtn' onClick={ () => loadDemo() }>Load Demo</p>
-          <p className='sidebarBtn' onClick={ () => clearDocument() }>Clear</p>
-        </div>
-      </div>
-      <div className='content'>
-        <DocumentSettings id="sectSettings" data={ doc } setData={ setDoc } />
-        <PageBreak id="sectBegin" pageNum={1} allPages={ pageCount } locked />
-        { renderSections() }
-        <div className='contentAddBtn'>
-          <select className='componentSelector'
-            onChange={ ({target}) => createSection(target.value) }
-            value="Add a section">
-            <option className='componentGrayOption'>Add a section</option>
-            <option value="band_overview">Band Overview</option>
-            <option value="channel_list">Channel List</option>
-            <option value="contacts">Contacts</option>
-            <option value="equipment_list">Equipment List</option>
-            <option value="members">Members</option>
-            <option value="monitoring">Monitoring</option>
-            <option value="requirements">Requirements</option>
-            <option value="stage_plan">Stage Plan</option>
-            <option value="title_section">Title Section</option>
-            <option value="page_break">Page Break</option>
-          </select>
-        </div>
-      </div>
-      <input type='file' ref={ importElem } onChange={ fileReceived } style={{ display: 'none' }} />
-      <a href="/" ref={ exportElem } style={{ display: 'none' }}>Hidden downloader tag for document exports</a>
+      }
     </AppStyles>
   );
 }
